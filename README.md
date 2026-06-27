@@ -2,8 +2,7 @@
 
 Ranks 100,000 candidates against the *Senior AI Engineer — Founding Team* job
 description and produces a spec-compliant top-100 shortlist with per-candidate
-reasoning. A FastAPI backend serves the ranking and pool analytics; a React +
-Tailwind dashboard explores them.
+reasoning.
 
 ---
 
@@ -27,18 +26,33 @@ disqualifiers. It never lets the skills list drive the semantic score.
 ## Architecture
 
 ```
-candidates.jsonl ─▶ data_loader.py ─▶ SQLite (data/redrob.db) ─▶ FastAPI (backend/api.py) ─▶ React dashboard
-                         │                                              ▲
-                         ▼                                              │
-                 features.py  +  ranker.py  ───────────────────────────┘
-                 (read profile)  (encode + fuse + rank + reason)
-
-rank.py  ─▶  candidates.jsonl ─▶ submission.csv     (the single reproduction command)
+candidates.jsonl
+      │
+      ▼
+features.py        ← reads each profile into interpretable components
+      │
+      ▼
+ranker.py          ← encodes evidence text, fuses scores, applies penalties
+      │
+      ▼
+rank.py            ← CLI entrypoint: pool in → submission.csv out
 ```
 
-Two execution paths share the same engine:
+## Repository Structure
 
-- **`rank.py`** — the Stage-3 reproduction command. Pool in, `submission.csv` out.
+```
+redrob-ranker/
+├── backend/
+│   ├── __init__.py
+│   ├── config.py       ← JD text, vocabularies, fusion weights
+│   ├── features.py     ← feature extraction from raw profiles
+│   └── ranker.py       ← scoring, penalty, honeypot, reasoning engine
+├── rank.py             ← reproduction entrypoint
+├── requirements.txt
+├── data/
+│   └── submission.csv  ← ranked top-100 output
+└── submission_metadata.yaml
+```
 
 ## Dataset
 
@@ -97,7 +111,7 @@ falls back gracefully if it is absent.
 
 **Compute budget.** Ranking all 100k candidates completes in ~2 minutes on a
 single CPU core (well within the 5-minute / 16 GB / CPU-only / no-network
-limit). Any embedding precompute is one-time and separate from the ranking step.
+limit).
 
 ## Evaluation Metrics
 
@@ -114,31 +128,32 @@ and honest, rank-consistent reasoning for the Stage-4 manual review.
 Validate the output with the bundle's checker:
 
 ```bash
-python validate_submission.py team_submission.csv      # -> "Submission is valid."
+python validate_submission.py submission.csv      # -> "Submission is valid."
 ```
 
 ## Installation
 
-**Backend**
 ```bash
 pip install -r requirements.txt
 ```
 
+## Running
 
-## Running Instructions: Produce the submission CSV (the reproduction command):**
+**Produce the submission CSV:**
 ```bash
 python rank.py --candidates ./candidates.jsonl --out ./submission.csv
 ```
 
-## API Endpoints
+**Optional — deeper embeddings via sentence-transformers:**
+```bash
+pip install sentence-transformers torch
+RANKER_USE_ST=1 python rank.py --candidates ./candidates.jsonl --out ./submission.csv
+```
 
-| Method | Path | Description |
-|--------|------|-------------|
-| GET | `/api/jd` | The job description being ranked against |
-| GET | `/api/stats` | Pre-aggregated pool analytics for the dashboard |
-| GET | `/api/ranking?limit&q` | Ranked shortlist, optional text filter |
-| GET | `/api/candidate/{id}` | Full profile + score breakdown for one candidate |
-| POST | `/api/rank_sample` | Rank a small uploaded sample end-to-end |
-| GET | `/docs` | Interactive OpenAPI docs |
+To rank against a different role, edit `JD_QUERY` / `JD_TEXT` in
+`backend/config.py` and re-run.
 
 ---
+
+*AI tools were used as part of development (see `submission_metadata.yaml`); the
+ranking pipeline runs fully offline and sends no data to any external API.*
