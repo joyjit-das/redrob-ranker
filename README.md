@@ -56,8 +56,7 @@ redrob-ranker/
 
 ## Dataset
 
-- 100,000 candidate profiles in `candidates.jsonl` (~465 MB; **not committed** —
-  place it in the repo root). Compressed `.jsonl.gz` is also accepted.
+- 100,000 candidate profiles in `candidates.jsonl` (**not committed**)
 - Each profile: `profile`, `career_history[]`, `education[]`, `skills[]`, and 23
   `redrob_signals` (engagement/behavioural). See `candidate_schema.json` in the
   challenge bundle.
@@ -155,5 +154,3 @@ To rank against a different role, edit `JD_QUERY` / `JD_TEXT` in
 
 ---
 
-*AI tools were used as part of development (see `submission_metadata.yaml`); the
-ranking pipeline runs fully offline and sends no data to any external API.*
