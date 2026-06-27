@@ -1,0 +1,79 @@
+# Redrob Hackathon — Submission Metadata
+# Fill in the team-identity placeholders before submitting via the portal.
+
+# ============================================================================
+# Team identity   (<-- EDIT THESE)
+# ============================================================================
+team_name: "SOLO PARTICIPATION"
+
+primary_contact:
+  name: "JOYJIT DAS"
+  email: "joyjitdas220705@gmail.com"
+  phone: "+91-9123872011"
+
+# ============================================================================
+# Code and reproducibility
+# ============================================================================
+github_repo: "https://github.com/joyjit-das/redrob-ranker"
+reproduce_command: "python rank.py --candidates ./candidates.jsonl --out ./submission.csv"
+
+# ============================================================================
+# Compute environment
+# ============================================================================
+compute:
+  platform: "Local Linux box"
+  cpu_cores: 8
+  ram_gb: 16
+  python_version: "3.12"
+  os: "Ubuntu 22.04 LTS"
+  uses_gpu_for_inference: false
+  has_network_during_ranking: false
+  pre_computation_required: false # TF-IDF+LSA default needs no offline precompute
+  pre_computation_time_minutes: 0 # (only the optional ST encoder downloads a model once)
+
+# ============================================================================
+# AI tools declaration  (transparency only — not penalized)
+# ============================================================================
+ai_tools_used:
+  - "Claude"
+
+ai_usage_summary: |
+  Used Claude for architecture discussion, code review, and drafting. All design
+  decisions (treating the skills array as noise, evidence-based scoring, honeypot
+  and keyword-stuffer detection, the behavioural availability multiplier, the
+  precompute-vs-ranking split for the compute budget) were reasoned through and
+  validated by the team against the dataset. No candidate data was sent to any
+  hosted LLM API; the ranking step runs fully offline.
+
+# ============================================================================
+# Approach summary (<=200 words)
+# ============================================================================
+methodology_summary: |
+  Transparent, evidence-based ranker. The decisive insight from the data: the
+  skills array is uniformly random noise (~12k count per skill), so keyword
+  matching is the trap. We therefore score candidates from career-history
+  descriptions, titles, and summary — never the raw skills list.
+
+  Each profile is read into interpretable components: semantic fit (TF-IDF+LSA
+  cosine vs a distilled JD query; optional sentence-transformers), career
+  evidence (retrieval/ranking/recsys/eval/production term signals), title prior,
+  experience-band fit (ideal 6-8), evidence-gated skill depth, and location.
+  These fuse with fixed weights, then multiplicative penalties apply the JD's
+  explicit disqualifiers (consulting-only, research-only, CV/speech-only,
+  keyword-stuffer, title-chaser). A behavioural multiplier from the 23 Redrob
+  signals models actual availability (recency, response rate, notice). Profiles
+  with multiple impossible attributes are flagged as honeypots and floored.
+
+  Architecture honours the compute budget: optional one-time embedding
+  precompute, then a ranking step that processes 100k candidates in ~2 minutes
+  on a single CPU core, well within the 5-minute limit.
+
+# ============================================================================
+# Declarations
+# ============================================================================
+declarations:
+  read_submission_spec: true
+  code_is_original_work: true
+  no_collusion: true
+  honeypot_check_done: true
+  reproduction_tested: true
