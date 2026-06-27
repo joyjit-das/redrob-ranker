@@ -39,7 +39,6 @@ rank.py  ─▶  candidates.jsonl ─▶ submission.csv     (the single reproduc
 Two execution paths share the same engine:
 
 - **`rank.py`** — the Stage-3 reproduction command. Pool in, `submission.csv` out.
-- **`run.py`** — builds the SQLite DB (one-time) and serves the dashboard API.
 
 ## Dataset
 
@@ -51,19 +50,6 @@ Two execution paths share the same engine:
 - Title mix is dominated by ~12 non-tech roles (Business Analyst, HR Manager,
   …) as noise; genuine fits (ML / AI / NLP / Search / Recommendation engineers)
   are rare by design — exactly as the JD warns.
-
-## Database Design
-
-SQLite (`data/redrob.db`), built by `data_loader.py`:
-
-| Table | Purpose |
-|-------|---------|
-| `ranking` | Top-N ranked rows: `candidate_id, rank, score, reasoning, components(JSON), behavioural, penalties(JSON)` |
-| `candidate` | Full profile JSON for ranked candidates (detail view) |
-| `pool_stat` | Pre-aggregated analytics over the full pool + the JD text |
-
-Pre-aggregating pool statistics at load time keeps the dashboard API fast and
-avoids re-scanning 100k rows per request.
 
 ## Features
 
@@ -138,41 +124,10 @@ python validate_submission.py team_submission.csv      # -> "Submission is valid
 pip install -r requirements.txt
 ```
 
-**Frontend**
-```bash
-cd frontend
-npm install
-```
 
-## Running Instructions
-
-**1 — Produce the submission CSV (the reproduction command):**
+## Running Instructions: Produce the submission CSV (the reproduction command):**
 ```bash
 python rank.py --candidates ./candidates.jsonl --out ./submission.csv
-```
-
-**2 — Run the dashboard** (builds `data/redrob.db` on first launch, then serves):
-```bash
-python run.py --candidates ./candidates.jsonl     # http://localhost:8000
-cd frontend && npm start                           # http://localhost:3000
-```
-
-Optional deeper embeddings:
-```bash
-pip install sentence-transformers torch
-RANKER_USE_ST=1 python rank.py --candidates ./candidates.jsonl --out ./submission.csv
-```
-
-## Example Queries
-
-The role/query is fixed to the released JD (`backend/config.py: JD_QUERY`). To
-rank against a different role, edit `JD_QUERY` / `JD_TEXT` and re-run. To rank a
-small custom sample end-to-end (the sandbox check), POST to `/api/rank_sample`:
-
-```bash
-curl -X POST http://localhost:8000/api/rank_sample \
-  -H "Content-Type: application/json" \
-  -d '{"candidates": [ <up to 200 candidate objects> ], "top_k": 20}'
 ```
 
 ## API Endpoints
@@ -187,6 +142,3 @@ curl -X POST http://localhost:8000/api/rank_sample \
 | GET | `/docs` | Interactive OpenAPI docs |
 
 ---
-
-*AI tools were used as part of development (see `submission_metadata.yaml`); the
-ranking pipeline runs fully offline and sends no data to any external API.*
